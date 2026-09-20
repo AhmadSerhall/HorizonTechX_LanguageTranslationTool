@@ -2,22 +2,24 @@ import { useState } from 'react';
 import './App.css';
 import Header from './components/Header';
 import Translator from './components/Translator';
-import { isRightToLeftLanguage } from './data/languages';
+import { getLanguage, isRightToLeftLanguage } from './data/languages';
 import { requestTranslation } from './services/translationService';
 
 function App() {
   const [sourceText, setSourceText] = useState('');
-  const [sourceLanguage, setSourceLanguage] = useState('en');
+  const [sourceLanguage, setSourceLanguage] = useState('auto');
   const [targetLanguage, setTargetLanguage] = useState('fr');
   const [translatedText, setTranslatedText] = useState('');
   const [serviceMessage, setServiceMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [detectedLanguage, setDetectedLanguage] = useState('');
 
   const resetOutput = () => {
     setTranslatedText('');
     setServiceMessage('');
     setCopied(false);
+    setDetectedLanguage('');
   };
 
   const handleSourceTextChange = (value) => {
@@ -31,9 +33,24 @@ function App() {
   };
 
   const handleSwap = () => {
+    const resolvedSourceLanguage = sourceLanguage === 'auto' ? detectedLanguage : sourceLanguage;
+    if (!resolvedSourceLanguage) {
+      setServiceMessage('Translate once to identify the source language before swapping.');
+      return;
+    }
+
+    const previousInput = sourceText;
     setSourceLanguage(targetLanguage);
-    setTargetLanguage(sourceLanguage);
-    resetOutput();
+    setTargetLanguage(resolvedSourceLanguage);
+    if (translatedText) {
+      setSourceText(translatedText);
+      setTranslatedText(previousInput);
+    } else {
+      resetOutput();
+    }
+    setServiceMessage('');
+    setCopied(false);
+    setDetectedLanguage('');
   };
 
   const handleTranslate = async () => {
@@ -42,8 +59,9 @@ function App() {
     setIsLoading(true);
     resetOutput();
     try {
-      const result = await requestTranslation({ text: sourceText, sourceLanguage, targetLanguage });
+      const result = await requestTranslation({ text: sourceText, source: sourceLanguage, target: targetLanguage });
       setTranslatedText(result.translatedText);
+      setDetectedLanguage(result.detectedLanguage || '');
     } catch (error) {
       setServiceMessage(error.message || 'Translation service is unavailable.');
     } finally {
@@ -69,7 +87,19 @@ function App() {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(translatedText);
     utterance.lang = targetLanguage;
+    const languagePrefix = targetLanguage.split('-')[0].toLocaleLowerCase();
+    const matchingVoice = window.speechSynthesis.getVoices().find((voice) => (
+      voice.lang.toLocaleLowerCase().startsWith(languagePrefix)
+    ));
+    if (matchingVoice) utterance.voice = matchingVoice;
     window.speechSynthesis.speak(utterance);
+  };
+
+  const handleInputKeyDown = (event) => {
+    if (event.key === 'Enter' && event.ctrlKey) {
+      event.preventDefault();
+      handleTranslate();
+    }
   };
 
   return (
@@ -81,11 +111,12 @@ function App() {
           sourceLanguage={sourceLanguage}
           targetLanguage={targetLanguage}
           translatedText={translatedText}
-          sourceDirection={isRightToLeftLanguage(sourceLanguage) ? 'rtl' : 'ltr'}
+          sourceDirection={sourceLanguage === 'auto' ? 'auto' : isRightToLeftLanguage(sourceLanguage) ? 'rtl' : 'ltr'}
           targetDirection={isRightToLeftLanguage(targetLanguage) ? 'rtl' : 'ltr'}
           isLoading={isLoading}
           serviceMessage={serviceMessage}
           copied={copied}
+          detectedLanguageName={getLanguage(detectedLanguage)?.name}
           onSourceTextChange={handleSourceTextChange}
           onSourceLanguageChange={handleLanguageChange(setSourceLanguage)}
           onTargetLanguageChange={handleLanguageChange(setTargetLanguage)}
@@ -94,6 +125,7 @@ function App() {
           onTranslate={handleTranslate}
           onCopy={handleCopy}
           onSpeak={handleSpeak}
+          onInputKeyDown={handleInputKeyDown}
         />
       </div>
     </div>

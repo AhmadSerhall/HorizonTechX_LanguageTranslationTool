@@ -12,6 +12,7 @@ function Translator({
   isLoading,
   serviceMessage,
   copied,
+  detectedLanguageName,
   onSourceTextChange,
   onSourceLanguageChange,
   onTargetLanguageChange,
@@ -20,6 +21,7 @@ function Translator({
   onTranslate,
   onCopy,
   onSpeak,
+  onInputKeyDown,
 }) {
   return (
     <main>
@@ -32,6 +34,7 @@ function Translator({
             onTextChange={onSourceTextChange}
             onLanguageChange={onSourceLanguageChange}
             onClear={onClear}
+            onKeyDown={onInputKeyDown}
           />
           <TranslationOutput
             text={translatedText}
@@ -39,6 +42,7 @@ function Translator({
             direction={targetDirection}
             message={serviceMessage}
             copied={copied}
+            detectedLanguageName={detectedLanguageName}
             onLanguageChange={onTargetLanguageChange}
             onCopy={onCopy}
             onSpeak={onSpeak}
@@ -50,11 +54,10 @@ function Translator({
           </button>
           <button className="translate-button" type="button" onClick={onTranslate} disabled={!sourceText.trim() || isLoading}>
             {isLoading ? <FiLoader className="loading-icon" /> : <FiSend />}
-            {isLoading ? 'Preparing...' : 'Translate'}
+            {isLoading ? 'Translating...' : 'Translate'}
           </button>
         </div>
       </div>
-      <p className="page-note">Translation is not connected yet — your text stays in this browser during this setup phase.</p>
     </main>
   );
 }

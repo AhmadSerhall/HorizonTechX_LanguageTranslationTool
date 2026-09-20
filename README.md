@@ -23,9 +23,19 @@ npm start
 
 The frontend runs on `http://localhost:3000`; the backend health endpoint is `http://localhost:5000/api/health`.
 
-## Current scope
+## Configure Azure Translator
 
-The translator UI, language controls, swapping, clear action, copy/TTS wiring, RTL handling, and backend health endpoint are ready. Real translation is deliberately not integrated yet, so no API key is used or exposed.
+1. Create an Azure AI Translator resource and copy its key, region, and endpoint from the Azure portal.
+2. In `backend`, copy `.env.example` to `.env`.
+3. Set `AZURE_TRANSLATOR_KEY`, `AZURE_TRANSLATOR_REGION` (optional for a global single-service resource), and `AZURE_TRANSLATOR_ENDPOINT` in that local file.
+
+The React app uses its development proxy for `/api` requests, so credentials never leave the backend. Without a configured `.env`, the API returns a safe configuration error instead of a fabricated translation.
+
+## Current capabilities
+
+- Searchable source and target language pickers, including automatic source detection
+- Azure Translator-backed `POST /api/translate`
+- Copy feedback, browser text-to-speech, RTL text support, Ctrl + Enter, and a 5,000 character limit
 
 ### Code Splitting
 

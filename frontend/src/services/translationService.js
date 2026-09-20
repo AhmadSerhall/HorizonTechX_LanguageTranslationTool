@@ -1,7 +1,19 @@
-/**
- * API wiring belongs here in the next phase. This intentionally never returns
- * a translation so unfinished integration cannot be mistaken for real output.
- */
-export const requestTranslation = async () => {
-  throw new Error('Translation service is not connected yet. The backend API will be added in the next phase.');
+export const requestTranslation = async ({ text, source, target }) => {
+  let response;
+  try {
+    response = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, source, target }),
+    });
+  } catch {
+    throw new Error('Unable to reach the translation service. Please try again.');
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || 'Translation service is temporarily unavailable.');
+  }
+
+  return payload;
 };

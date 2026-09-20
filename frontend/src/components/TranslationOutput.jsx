@@ -1,7 +1,7 @@
 import { FiAlertCircle, FiCheck, FiCopy, FiVolume2 } from 'react-icons/fi';
 import LanguageSelector from './LanguageSelector';
 
-function TranslationOutput({ text, language, direction, message, copied, onLanguageChange, onCopy, onSpeak }) {
+function TranslationOutput({ text, language, direction, message, copied, detectedLanguageName, onLanguageChange, onCopy, onSpeak }) {
   const hasTranslation = Boolean(text);
 
   return (
@@ -12,6 +12,7 @@ function TranslationOutput({ text, language, direction, message, copied, onLangu
           label="Target language"
           value={language}
           onChange={onLanguageChange}
+          selectorType="target"
         />
         <div>
           <button className="icon-button" type="button" aria-label="Copy translated text" title="Copy translation" onClick={onCopy} disabled={!hasTranslation}>
@@ -29,7 +30,7 @@ function TranslationOutput({ text, language, direction, message, copied, onLangu
       </div>
       <div className="panel-footer">
         <span>{hasTranslation ? `${text.length.toLocaleString()} characters` : 'Translation output'}</span>
-        {copied && <span>Copied to clipboard</span>}
+        {copied ? <span>Copied</span> : detectedLanguageName && <span>Detected: {detectedLanguageName}</span>}
       </div>
     </section>
   );
