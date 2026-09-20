@@ -1,0 +1,16 @@
+{
+  "name": "lingua-translate-backend",
+  "version": "0.1.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "description": "Backend foundation for LinguaTranslate",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.1",
+    "express": "^5.2.1"
+  }
+}
