@@ -2,14 +2,6 @@ const { randomUUID } = require('crypto');
 
 const MAX_TEXT_LENGTH = 5000;
 
-// This mirrors the curated Azure-supported language picker in the frontend.
-const SUPPORTED_LANGUAGE_CODES = new Set([
-  'af', 'ar', 'bg', 'bn', 'ca', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fa', 'fi',
-  'fr', 'he', 'hi', 'hr', 'hu', 'id', 'it', 'ja', 'ko', 'lt', 'lv', 'ms', 'nb', 'nl',
-  'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'ta', 'te', 'th', 'tr', 'uk', 'ur', 'vi',
-  'zh-Hans', 'zh-Hant',
-]);
-
 class TranslationServiceError extends Error {
   constructor(message, status) {
     super(message);
@@ -74,4 +66,4 @@ const translate = async ({ text, source, target }) => {
   };
 };
 
-module.exports = { MAX_TEXT_LENGTH, SUPPORTED_LANGUAGE_CODES, TranslationServiceError, translate };
+module.exports = { MAX_TEXT_LENGTH, TranslationServiceError, translate };

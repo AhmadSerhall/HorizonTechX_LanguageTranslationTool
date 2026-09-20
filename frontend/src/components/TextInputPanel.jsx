@@ -1,8 +1,16 @@
-import { FiMic, FiTrash2 } from 'react-icons/fi';
+import { FiLoader, FiMic, FiMicOff, FiTrash2 } from 'react-icons/fi';
 import { MAX_TEXT_LENGTH } from '../constants';
 import LanguageSelector from './LanguageSelector';
 
-function TextInputPanel({ text, language, direction, onTextChange, onLanguageChange, onClear, onKeyDown }) {
+function TextInputPanel({
+  text, language, languages, direction, isConverting, microphoneState, isSpeechRecognitionSupported,
+  onTextChange, onLanguageChange, onClear, onKeyDown, onMicrophone,
+}) {
+  const microphoneIsListening = microphoneState === 'listening';
+  const microphoneIsProcessing = microphoneState === 'processing';
+  const microphoneLabel = !isSpeechRecognitionSupported
+    ? 'Speech input is not supported in this browser.'
+    : microphoneIsListening ? 'Stop voice input' : microphoneIsProcessing ? 'Finalizing voice input' : 'Start voice input';
   return (
     <section className="translation-panel" aria-label="Source text">
       <div className="panel-topline">
@@ -12,10 +20,20 @@ function TextInputPanel({ text, language, direction, onTextChange, onLanguageCha
           value={language}
           onChange={onLanguageChange}
           selectorType="source"
+          languages={languages}
+          disabled={isConverting || microphoneState !== 'idle'}
+          isLoading={isConverting}
         />
         <div>
-          <button className="icon-button" type="button" aria-label="Speech input coming soon" title="Speech input coming soon" disabled>
-            <FiMic />
+          <button
+            className={`icon-button ${microphoneIsListening ? 'is-listening' : ''}`}
+            type="button"
+            aria-label={microphoneLabel}
+            title={microphoneLabel}
+            onClick={onMicrophone}
+            disabled={!isSpeechRecognitionSupported || microphoneIsProcessing || isConverting}
+          >
+            {microphoneIsProcessing ? <FiLoader className="loading-icon" /> : microphoneIsListening ? <FiMicOff /> : <FiMic />}
           </button>
           <button className="icon-button" type="button" aria-label="Clear source text" title="Clear text" onClick={onClear} disabled={!text}>
             <FiTrash2 />
@@ -35,7 +53,7 @@ function TextInputPanel({ text, language, direction, onTextChange, onLanguageCha
       />
       <div className="panel-footer">
         <span>{text.length.toLocaleString()} / {MAX_TEXT_LENGTH.toLocaleString()}</span>
-        <span className="input-hint">Ctrl + Enter to translate</span>
+        <span className="input-hint">{isConverting ? 'Converting source text…' : 'Ctrl + Enter to translate'}</span>
       </div>
     </section>
   );

@@ -1,4 +1,4 @@
-export const languages = [
+export const fallbackLanguages = [
   { code: 'af', name: 'Afrikaans' },
   { code: 'ar', name: 'Arabic', nativeName: 'العربية', dir: 'rtl' },
   { code: 'bg', name: 'Bulgarian', nativeName: 'Български' },
@@ -45,5 +45,6 @@ export const languages = [
   { code: 'zh-Hant', name: 'Chinese (Traditional)', nativeName: '繁體中文' },
 ];
 
-export const getLanguage = (languageCode) => languages.find((language) => language.code === languageCode);
-export const isRightToLeftLanguage = (languageCode) => getLanguage(languageCode)?.dir === 'rtl';
+export const languages = fallbackLanguages;
+export const getLanguage = (languageCode, languageList = fallbackLanguages) => languageList.find((language) => language.code === languageCode);
+export const isRightToLeftLanguage = (languageCode, languageList = fallbackLanguages) => getLanguage(languageCode, languageList)?.dir === 'rtl';

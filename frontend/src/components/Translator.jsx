@@ -6,12 +6,18 @@ function Translator({
   sourceText,
   sourceLanguage,
   targetLanguage,
+  languages,
   translatedText,
   sourceDirection,
   targetDirection,
   isLoading,
+  isConvertingSource,
   serviceMessage,
   copied,
+  speechState,
+  isSpeechSupported,
+  microphoneState,
+  isSpeechRecognitionSupported,
   detectedLanguageName,
   onSourceTextChange,
   onSourceLanguageChange,
@@ -22,6 +28,7 @@ function Translator({
   onCopy,
   onSpeak,
   onInputKeyDown,
+  onMicrophone,
 }) {
   return (
     <main>
@@ -30,18 +37,27 @@ function Translator({
           <TextInputPanel
             text={sourceText}
             language={sourceLanguage}
+            languages={languages}
             direction={sourceDirection}
+            isConverting={isConvertingSource}
+            microphoneState={microphoneState}
+            isSpeechRecognitionSupported={isSpeechRecognitionSupported}
             onTextChange={onSourceTextChange}
             onLanguageChange={onSourceLanguageChange}
             onClear={onClear}
             onKeyDown={onInputKeyDown}
+            onMicrophone={onMicrophone}
           />
           <TranslationOutput
             text={translatedText}
             language={targetLanguage}
+            languages={languages}
             direction={targetDirection}
             message={serviceMessage}
             copied={copied}
+            speechState={speechState}
+            isSpeechSupported={isSpeechSupported}
+            isConvertingSource={isConvertingSource}
             detectedLanguageName={detectedLanguageName}
             onLanguageChange={onTargetLanguageChange}
             onCopy={onCopy}
@@ -49,10 +65,10 @@ function Translator({
           />
         </div>
         <div className="translator-actions">
-          <button className="swap-button" type="button" aria-label="Swap source and target languages" title="Swap languages" onClick={onSwap}>
+          <button className="swap-button" type="button" aria-label="Swap source and target languages" title="Swap languages" onClick={onSwap} disabled={isConvertingSource}>
             <FiRepeat />
           </button>
-          <button className="translate-button" type="button" onClick={onTranslate} disabled={!sourceText.trim() || isLoading}>
+          <button className="translate-button" type="button" onClick={onTranslate} disabled={!sourceText.trim() || isLoading || isConvertingSource}>
             {isLoading ? <FiLoader className="loading-icon" /> : <FiSend />}
             {isLoading ? 'Translating...' : 'Translate'}
           </button>

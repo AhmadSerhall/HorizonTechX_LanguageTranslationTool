@@ -1,14 +1,16 @@
-const { MAX_TEXT_LENGTH, SUPPORTED_LANGUAGE_CODES, translate } = require('../services/translatorService');
+const { MAX_TEXT_LENGTH, translate } = require('../services/translatorService');
+const { getSupportedLanguageCodes } = require('../services/languageCatalogService');
 
 const validateTranslationRequest = (body) => {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Invalid request body.';
   if (typeof body.text !== 'string' || !body.text.trim()) return 'Text is required.';
   if (body.text.length > MAX_TEXT_LENGTH) return `Text must not exceed ${MAX_TEXT_LENGTH} characters.`;
   if (typeof body.target !== 'string' || !body.target) return 'Target language is required.';
-  if (!SUPPORTED_LANGUAGE_CODES.has(body.target) || body.target === 'auto') return 'Unsupported target language.';
+  const supportedLanguageCodes = getSupportedLanguageCodes();
+  if (!supportedLanguageCodes.has(body.target) || body.target === 'auto') return 'Unsupported target language.';
 
   const source = body.source || 'auto';
-  if (typeof source !== 'string' || (source !== 'auto' && !SUPPORTED_LANGUAGE_CODES.has(source))) {
+  if (typeof source !== 'string' || (source !== 'auto' && !supportedLanguageCodes.has(source))) {
     return 'Unsupported source language.';
   }
 

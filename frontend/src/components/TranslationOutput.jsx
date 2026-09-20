@@ -1,8 +1,15 @@
-import { FiAlertCircle, FiCheck, FiCopy, FiVolume2 } from 'react-icons/fi';
+import { FiAlertCircle, FiCheck, FiCopy, FiLoader, FiSquare, FiVolume2 } from 'react-icons/fi';
 import LanguageSelector from './LanguageSelector';
 
-function TranslationOutput({ text, language, direction, message, copied, detectedLanguageName, onLanguageChange, onCopy, onSpeak }) {
+function TranslationOutput({
+  text, language, languages, direction, message, copied, detectedLanguageName, speechState, isSpeechSupported, isConvertingSource,
+  onLanguageChange, onCopy, onSpeak,
+}) {
   const hasTranslation = Boolean(text);
+  const speechLabel = !isSpeechSupported
+    ? 'Text-to-speech is not supported in this browser.'
+    : speechState === 'loading' ? 'Preparing speech'
+      : speechState === 'speaking' ? 'Stop speaking' : 'Listen to translation';
 
   return (
     <section className="translation-panel output-panel" aria-label="Translated text">
@@ -13,13 +20,15 @@ function TranslationOutput({ text, language, direction, message, copied, detecte
           value={language}
           onChange={onLanguageChange}
           selectorType="target"
+          languages={languages}
+          disabled={isConvertingSource}
         />
         <div>
           <button className="icon-button" type="button" aria-label="Copy translated text" title="Copy translation" onClick={onCopy} disabled={!hasTranslation}>
             {copied ? <FiCheck /> : <FiCopy />}
           </button>
-          <button className="icon-button" type="button" aria-label="Listen to translated text" title="Listen to translation" onClick={onSpeak} disabled={!hasTranslation}>
-            <FiVolume2 />
+          <button className="icon-button" type="button" aria-label={speechLabel} title={speechLabel} onClick={onSpeak} disabled={!hasTranslation || !isSpeechSupported}>
+            {speechState === 'loading' ? <FiLoader className="loading-icon" /> : speechState === 'speaking' ? <FiSquare /> : <FiVolume2 />}
           </button>
         </div>
       </div>

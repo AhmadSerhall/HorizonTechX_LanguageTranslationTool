@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FiChevronDown, FiSearch, FiX } from 'react-icons/fi';
-import { getLanguage, languages } from '../data/languages';
+import { getLanguage } from '../data/languages';
 
-function LanguageSelector({ id, label, value, onChange, selectorType }) {
+function LanguageSelector({ id, label, value, onChange, selectorType, languages, disabled, isLoading }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const searchInputRef = useRef(null);
   const pickerRef = useRef(null);
   const isSource = selectorType === 'source';
-  const selectedLanguage = value === 'auto' ? { code: 'auto', name: 'Detect language' } : getLanguage(value);
+  const selectedLanguage = value === 'auto' ? { code: 'auto', name: 'Detect language' } : getLanguage(value, languages);
   const languageOptions = useMemo(() => (
     isSource ? [{ code: 'auto', name: 'Detect language' }, ...languages] : languages
-  ), [isSource]);
+  ), [isSource, languages]);
   const filteredLanguages = languageOptions.filter((language) => (
     [language.name, language.nativeName, language.code].filter(Boolean).some((item) => (
       item.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
@@ -56,9 +56,10 @@ function LanguageSelector({ id, label, value, onChange, selectorType }) {
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         onClick={() => setIsOpen(true)}
+        disabled={disabled}
       >
         <span>{selectedLanguage?.name || 'Select language'}</span>
-        <FiChevronDown aria-hidden="true" />
+        {isLoading ? <span className="inline-spinner" aria-label="Converting source text" /> : <FiChevronDown aria-hidden="true" />}
       </button>
       {isOpen && (
         <div className="language-picker-backdrop" role="presentation" onMouseDown={(event) => {
