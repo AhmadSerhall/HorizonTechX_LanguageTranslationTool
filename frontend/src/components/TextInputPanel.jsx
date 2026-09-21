@@ -4,7 +4,7 @@ import LanguageSelector from './LanguageSelector';
 
 function TextInputPanel({
   text, language, languages, direction, placeholder, isConverting, microphoneState, isSpeechRecognitionSupported,
-  sourceSpeechState, isSpeechSupported, onTextChange, onLanguageChange, onClear, onKeyDown, onMicrophone, onSpeak,
+  sourceSpeechState, isSpeechSupported, speechAvailability, onTextChange, onLanguageChange, onClear, onKeyDown, onMicrophone, onSpeak,
 }) {
   const microphoneIsListening = microphoneState === 'listening';
   const microphoneIsProcessing = microphoneState === 'processing';
@@ -13,6 +13,8 @@ function TextInputPanel({
     : microphoneIsListening ? 'Stop voice input' : microphoneIsProcessing ? 'Processing voice input' : 'Start voice input';
   const sourceSpeechLabel = !isSpeechSupported
     ? 'Text-to-speech is not supported in this browser.'
+    : speechAvailability === 'unavailable' ? 'Speech is not available for this language on your device.'
+      : speechAvailability === 'pending' ? 'Speech voices are still loading.'
     : sourceSpeechState === 'loading' ? 'Preparing source speech'
       : sourceSpeechState === 'speaking' ? 'Stop source speech' : 'Listen to source text';
   return (
@@ -39,7 +41,7 @@ function TextInputPanel({
           >
             {microphoneIsProcessing ? <FiLoader className="loading-icon" /> : microphoneIsListening ? <FiMicOff /> : <FiMic />}
           </button>
-          <button className="icon-button" type="button" aria-label={sourceSpeechLabel} title={sourceSpeechLabel} onClick={onSpeak} disabled={!text || !isSpeechSupported}>
+          <button className="icon-button" type="button" aria-label={sourceSpeechLabel} title={sourceSpeechLabel} onClick={onSpeak} disabled={!text || !isSpeechSupported || speechAvailability === 'unavailable'}>
             {sourceSpeechState === 'loading' ? <FiLoader className="loading-icon" /> : sourceSpeechState === 'speaking' ? <FiSquare /> : <FiVolume2 />}
           </button>
           <button className="icon-button" type="button" aria-label="Clear source text" title="Clear text" onClick={onClear} disabled={!text}>

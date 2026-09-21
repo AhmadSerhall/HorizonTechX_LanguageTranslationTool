@@ -1,4 +1,4 @@
-import { FiLoader, FiRepeat, FiSend } from 'react-icons/fi';
+import { FiRepeat } from 'react-icons/fi';
 import TextInputPanel from './TextInputPanel';
 import TranslationOutput from './TranslationOutput';
 
@@ -11,13 +11,14 @@ function Translator({
   sourceDirection,
   targetDirection,
   isLoading,
-  isManualTranslation,
   isConvertingSource,
   serviceMessage,
   copied,
   isSpeechSupported,
+  sourceSpeechAvailability,
   sourceSpeechState,
   sourcePlaceholder,
+  translationSpeechAvailability,
   translationSpeechState,
   microphoneState,
   isSpeechRecognitionSupported,
@@ -28,7 +29,6 @@ function Translator({
   onTargetLanguageChange,
   onClear,
   onSwap,
-  onTranslate,
   onCopy,
   onSpeak,
   onInputKeyDown,
@@ -49,6 +49,7 @@ function Translator({
             isSpeechRecognitionSupported={isSpeechRecognitionSupported}
             sourceSpeechState={sourceSpeechState}
             isSpeechSupported={isSpeechSupported}
+            speechAvailability={sourceSpeechAvailability}
             onTextChange={onSourceTextChange}
             onLanguageChange={onSourceLanguageChange}
             onClear={onClear}
@@ -56,6 +57,9 @@ function Translator({
             onMicrophone={onMicrophone}
             onSpeak={onSourceSpeak}
           />
+          <button className="swap-button" type="button" aria-label="Swap languages" title="Swap languages" onClick={onSwap} disabled={isConvertingSource}>
+            <FiRepeat />
+          </button>
           <TranslationOutput
             text={translatedText}
             sourceText={sourceText}
@@ -67,21 +71,13 @@ function Translator({
             copied={copied}
             speechState={translationSpeechState}
             isSpeechSupported={isSpeechSupported}
+            speechAvailability={translationSpeechAvailability}
             isConvertingSource={isConvertingSource}
             detectedLanguageName={detectedLanguageName}
             onLanguageChange={onTargetLanguageChange}
             onCopy={onCopy}
             onSpeak={onSpeak}
           />
-        </div>
-        <div className="translator-actions">
-          <button className="swap-button" type="button" aria-label="Swap source and target languages" title="Swap languages" onClick={onSwap} disabled={isConvertingSource}>
-            <FiRepeat />
-          </button>
-          <button className="translate-button" type="button" onClick={onTranslate} disabled={!sourceText.trim() || isLoading || isConvertingSource}>
-            {isLoading && isManualTranslation ? <FiLoader className="loading-icon" /> : <FiSend />}
-            {isLoading && isManualTranslation ? 'Translating...' : 'Translate'}
-          </button>
         </div>
       </div>
     </main>

@@ -23,6 +23,7 @@ export function useSpeechSynthesis() {
   const [speechState, setSpeechState] = useState('idle');
   const [activeSpeaker, setActiveSpeaker] = useState(null);
   const [voices, setVoices] = useState([]);
+  const [voicesReady, setVoicesReady] = useState(false);
   const utteranceRef = useRef(null);
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
@@ -35,23 +36,36 @@ export function useSpeechSynthesis() {
 
   useEffect(() => {
     if (!isSupported) return undefined;
-    const updateVoices = () => setVoices(window.speechSynthesis.getVoices() || []);
+    const updateVoices = (fromVoicesChangedEvent = false) => {
+      const availableVoices = window.speechSynthesis.getVoices() || [];
+      setVoices(availableVoices);
+      if (availableVoices.length || fromVoicesChangedEvent) setVoicesReady(true);
+    };
     updateVoices();
-    window.speechSynthesis.addEventListener?.('voiceschanged', updateVoices);
+    const handleVoicesChanged = () => updateVoices(true);
+    window.speechSynthesis.addEventListener?.('voiceschanged', handleVoicesChanged);
     return () => {
-      window.speechSynthesis.removeEventListener?.('voiceschanged', updateVoices);
+      window.speechSynthesis.removeEventListener?.('voiceschanged', handleVoicesChanged);
       window.speechSynthesis.cancel();
     };
   }, [isSupported]);
 
+  const getVoiceAvailability = useCallback((languageCode) => {
+    if (!isSupported) return 'unsupported';
+    if (selectVoice(voices, languageCode)) return 'available';
+    return voicesReady ? 'unavailable' : 'pending';
+  }, [isSupported, voices, voicesReady]);
+
   const speak = useCallback((text, languageCode, speaker = 'translation') => {
     if (!isSupported || !text.trim()) return false;
 
+    const voice = selectVoice(voices, languageCode);
+    if (!voice) return false;
+
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    const voice = selectVoice(voices, languageCode);
-    utterance.lang = voice?.lang || speechLocales[languageCode] || languageCode || navigator.language || 'en-US';
-    if (voice) utterance.voice = voice;
+    utterance.lang = voice.lang;
+    utterance.voice = voice;
 
     utteranceRef.current = utterance;
     setActiveSpeaker(speaker);
@@ -70,5 +84,5 @@ export function useSpeechSynthesis() {
     return true;
   }, [isSupported, voices]);
 
-  return { activeSpeaker, cancel, isSupported, speak, speechState };
+  return { activeSpeaker, cancel, getVoiceAvailability, isSupported, speak, speechState };
 }

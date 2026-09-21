@@ -42,7 +42,6 @@ function App() {
   const [translatedText, setTranslatedText] = useState('');
   const [serviceMessage, setServiceMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isManualTranslation, setIsManualTranslation] = useState(false);
   const [isConvertingSource, setIsConvertingSource] = useState(false);
   const [isMicrophoneProcessing, setIsMicrophoneProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -92,6 +91,7 @@ function App() {
   const {
     activeSpeaker,
     cancel: cancelSpeech,
+    getVoiceAvailability,
     isSupported: isSpeechSupported,
     speak,
     speechState,
@@ -101,8 +101,10 @@ function App() {
   const sourceSpeechLanguage = sourceLanguage === 'auto'
     ? detectedLanguage || navigator.language || 'en-US'
     : sourceLanguage;
+  const sourceSpeechAvailability = getVoiceAvailability(sourceSpeechLanguage);
+  const translationSpeechAvailability = getVoiceAvailability(targetLanguage);
 
-  const startTranslation = useCallback(async ({ text, source, target, force = false, manual = false }) => {
+  const startTranslation = useCallback(async ({ text, source, target, force = false }) => {
     if (!text.trim()) return false;
     const translationKey = getTranslationKey(text, source, target);
     if (!force && (latestRequestedKeyRef.current === translationKey || latestSuccessfulKeyRef.current === translationKey)) {
@@ -111,7 +113,6 @@ function App() {
 
     const requestId = cancelActiveTranslation();
     latestRequestedKeyRef.current = translationKey;
-    setIsManualTranslation(manual);
     setServiceMessage('');
     setTranslatedText('');
     setDetectedLanguage('');
@@ -122,7 +123,6 @@ function App() {
       latestRequestedKeyRef.current = '';
       setTranslatedText(text);
       setIsLoading(false);
-      setIsManualTranslation(false);
       return true;
     }
 
@@ -145,7 +145,6 @@ function App() {
     } finally {
       if (requestId === requestIdRef.current) {
         setIsLoading(false);
-        setIsManualTranslation(false);
       }
     }
   }, [cancelActiveTranslation]);
@@ -167,7 +166,6 @@ function App() {
     const nextText = currentText ? `${currentText} ${recognizedText}` : recognizedText;
     cancelPendingRequests();
     setIsLoading(false);
-    setIsManualTranslation(false);
     setIsConvertingSource(false);
     updateSourceText(nextText);
     latestSuccessfulKeyRef.current = '';
@@ -225,7 +223,6 @@ function App() {
     cancelSpeech();
     cancelPendingRequests();
     setIsLoading(false);
-    setIsManualTranslation(false);
     setIsConvertingSource(false);
     setIsMicrophoneProcessing(false);
     updateSourceText(value);
@@ -293,7 +290,6 @@ function App() {
     cancelSpeech();
     cancelPendingRequests();
     latestSuccessfulKeyRef.current = '';
-    setIsManualTranslation(false);
     setTargetLanguage(nextLanguage);
     resetOutput();
     if (sourceTextRef.current.trim()) {
@@ -306,7 +302,6 @@ function App() {
     cancelSpeech();
     cancelPendingRequests();
     setIsLoading(false);
-    setIsManualTranslation(false);
     const resolvedSourceLanguage = sourceLanguage === 'auto' ? detectedLanguage : sourceLanguage;
     if (!resolvedSourceLanguage) {
       setServiceMessage('Translate once to identify the source language before swapping.');
@@ -334,7 +329,7 @@ function App() {
     clearAutoTranslateTimer();
     recognition.stop();
     cancelSpeech();
-    startTranslation({ text, source: sourceLanguage, target: targetLanguage, force: true, manual: true });
+    startTranslation({ text, source: sourceLanguage, target: targetLanguage, force: true });
   }, [cancelSpeech, clearAutoTranslateTimer, isConvertingSource, recognition, sourceLanguage, startTranslation, targetLanguage]);
 
   const handleCopy = useCallback(async () => {
@@ -355,8 +350,12 @@ function App() {
       return;
     }
     recognition.stop();
-    speak(translatedText, targetLanguage, 'translation');
-  }, [cancelSpeech, isSpeechSupported, recognition, speak, targetLanguage, translatedText, translationSpeechState]);
+    if (!speak(translatedText, targetLanguage, 'translation')) {
+      setServiceMessage(translationSpeechAvailability === 'pending'
+        ? 'Speech voices are still loading. Please try again shortly.'
+        : 'Speech is not available for this language on your device.');
+    }
+  }, [cancelSpeech, isSpeechSupported, recognition, speak, targetLanguage, translatedText, translationSpeechAvailability, translationSpeechState]);
 
   const handleSourceSpeak = useCallback(() => {
     if (!sourceText.trim() || !isSpeechSupported) return;
@@ -365,8 +364,12 @@ function App() {
       return;
     }
     recognition.stop();
-    speak(sourceText, sourceSpeechLanguage, 'source');
-  }, [cancelSpeech, isSpeechSupported, recognition, sourceSpeechLanguage, sourceSpeechState, sourceText, speak]);
+    if (!speak(sourceText, sourceSpeechLanguage, 'source')) {
+      setServiceMessage(sourceSpeechAvailability === 'pending'
+        ? 'Speech voices are still loading. Please try again shortly.'
+        : 'Speech is not available for this language on your device.');
+    }
+  }, [cancelSpeech, isSpeechSupported, recognition, sourceSpeechAvailability, sourceSpeechLanguage, sourceSpeechState, sourceText, speak]);
 
   const handleMicrophone = useCallback(() => {
     if (!recognition.isSupported) {
@@ -402,14 +405,15 @@ function App() {
           sourceDirection={sourceLanguage === 'auto' ? 'auto' : isRightToLeftLanguage(sourceLanguage, languages) ? 'rtl' : 'ltr'}
           targetDirection={isRightToLeftLanguage(targetLanguage, languages) ? 'rtl' : 'ltr'}
           isLoading={isLoading}
-          isManualTranslation={isManualTranslation}
           isConvertingSource={isConvertingSource}
           serviceMessage={serviceMessage}
           copied={copied}
           isSpeechSupported={isSpeechSupported}
+          sourceSpeechAvailability={sourceSpeechAvailability}
           sourceSpeechState={sourceSpeechState}
           sourcePlaceholder={getUiTranslation(sourceLanguage === 'auto' ? 'en' : sourceLanguage).inputPlaceholder}
           translationSpeechState={translationSpeechState}
+          translationSpeechAvailability={translationSpeechAvailability}
           microphoneState={isMicrophoneProcessing ? 'processing' : recognition.recognitionState}
           isSpeechRecognitionSupported={recognition.isSupported}
           detectedLanguageName={getLanguage(detectedLanguage, languages)?.name}
@@ -418,7 +422,6 @@ function App() {
           onTargetLanguageChange={handleTargetLanguageChange}
           onClear={() => handleSourceTextChange('')}
           onSwap={handleSwap}
-          onTranslate={handleTranslate}
           onCopy={handleCopy}
           onSpeak={handleSpeak}
           onSourceSpeak={handleSourceSpeak}

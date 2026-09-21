@@ -5,11 +5,13 @@ import TranslationSkeleton from './TranslationSkeleton';
 
 function TranslationOutput({
   text, sourceText, language, languages, direction, isLoading, message, copied, detectedLanguageName, speechState, isSpeechSupported, isConvertingSource,
-  onLanguageChange, onCopy, onSpeak,
+  speechAvailability, onLanguageChange, onCopy, onSpeak,
 }) {
   const hasTranslation = Boolean(text);
   const speechLabel = !isSpeechSupported
     ? 'Text-to-speech is not supported in this browser.'
+    : speechAvailability === 'unavailable' ? 'Speech is not available for this language on your device.'
+      : speechAvailability === 'pending' ? 'Speech voices are still loading.'
     : speechState === 'loading' ? 'Preparing speech'
       : speechState === 'speaking' ? 'Stop speaking' : 'Listen to translation';
   const localizedPlaceholder = getOutputPlaceholder(language);
@@ -30,7 +32,7 @@ function TranslationOutput({
           <button className="icon-button" type="button" aria-label="Copy translated text" title="Copy translation" onClick={onCopy} disabled={!hasTranslation}>
             {copied ? <FiCheck /> : <FiCopy />}
           </button>
-          <button className="icon-button" type="button" aria-label={speechLabel} title={speechLabel} onClick={onSpeak} disabled={!hasTranslation || !isSpeechSupported}>
+          <button className="icon-button" type="button" aria-label={speechLabel} title={speechLabel} onClick={onSpeak} disabled={!hasTranslation || !isSpeechSupported || speechAvailability === 'unavailable'}>
             {speechState === 'loading' ? <FiLoader className="loading-icon" /> : speechState === 'speaking' ? <FiSquare /> : <FiVolume2 />}
           </button>
         </div>

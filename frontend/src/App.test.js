@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import App from './App';
 import { requestLanguages, requestTranslation } from './services/translationService';
 import { AZURE_TRANSLATION_LANGUAGE_CODES } from './data/azureTranslationLanguageCodes';
@@ -24,6 +24,11 @@ beforeEach(() => {
   requestLanguages.mockRejectedValue(new Error('Catalog unavailable'));
   requestTranslation.mockReset();
   speechSynthesisMock.cancel.mockClear();
+  speechSynthesisMock.getVoices.mockReset();
+  speechSynthesisMock.getVoices.mockReturnValue([
+    { lang: 'en-US', name: 'English voice' },
+    { lang: 'fr-FR', name: 'French voice' },
+  ]);
   speechSynthesisMock.speak.mockClear();
   Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: speechSynthesisMock });
   global.SpeechSynthesisUtterance = function SpeechSynthesisUtterance(text) { this.text = text; };
@@ -44,6 +49,8 @@ test('renders the translator interface and retains its local catalog if language
   render(<App />);
   expect(screen.getByRole('heading', { name: /linguatranslate/i })).toBeInTheDocument();
   expect(screen.getByPlaceholderText(/enter text to translate/i)).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /^translate$/i })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Swap languages' })).toBeInTheDocument();
   expect(requestLanguages).toHaveBeenCalledTimes(1);
 });
 
@@ -107,7 +114,7 @@ test('supports copying, source/output swapping, and the speech lifecycle', async
   render(<App />);
   const input = screen.getByLabelText('Text to translate');
   fireEvent.change(input, { target: { value: 'Hello' } });
-  fireEvent.click(screen.getByRole('button', { name: /^translate$/i }));
+  fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true });
   expect(await screen.findByText('Bonjour')).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: /copy translated text/i }));
@@ -123,7 +130,7 @@ test('supports copying, source/output swapping, and the speech lifecycle', async
   expect(speechSynthesisMock.cancel).toHaveBeenCalled();
   expect(screen.getByRole('button', { name: /listen to translation/i })).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole('button', { name: /swap source and target/i }));
+  fireEvent.click(screen.getByRole('button', { name: 'Swap languages' }));
   expect(input).toHaveValue('Bonjour');
   expect(screen.getByText('Hello')).toBeInTheDocument();
 });
@@ -201,7 +208,10 @@ test('localizes source placeholders for selected languages without translation r
 });
 
 test('source text-to-speech has lifecycle controls and chooses the selected language voice', () => {
-  speechSynthesisMock.getVoices.mockReturnValue([{ lang: 'fr-FR', name: 'French voice' }]);
+  speechSynthesisMock.getVoices.mockReturnValue([
+    { lang: 'en-US', name: 'English voice' },
+    { lang: 'fr-FR', name: 'French voice' },
+  ]);
   render(<App />);
   const input = screen.getByLabelText('Text to translate');
   const sourceSpeaker = screen.getByRole('button', { name: /listen to source text/i });
@@ -228,7 +238,7 @@ test('source and translation speakers share one browser speech channel', async (
   render(<App />);
   const input = screen.getByLabelText('Text to translate');
   fireEvent.change(input, { target: { value: 'Hello' } });
-  fireEvent.click(screen.getByRole('button', { name: /^translate$/i }));
+  fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true });
   expect(await screen.findByText('Bonjour')).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: /listen to source text/i }));
@@ -243,8 +253,9 @@ test('detected source language is used for source text-to-speech when available'
   speechSynthesisMock.getVoices.mockReturnValue([{ lang: 'fr-FR', name: 'French voice' }]);
   requestTranslation.mockResolvedValue({ translatedText: 'Hello', detectedLanguage: 'fr' });
   render(<App />);
-  fireEvent.change(screen.getByLabelText('Text to translate'), { target: { value: 'bonjour' } });
-  fireEvent.click(screen.getByRole('button', { name: /^translate$/i }));
+  const input = screen.getByLabelText('Text to translate');
+  fireEvent.change(input, { target: { value: 'bonjour' } });
+  fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true });
   expect(await screen.findByText('Hello')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /listen to source text/i }));
   const utterance = speechSynthesisMock.speak.mock.calls.at(-1)?.[0];
@@ -264,6 +275,25 @@ test('Arabic source speech selects an Arabic voice and source edits cancel it', 
   const cancellationCount = speechSynthesisMock.cancel.mock.calls.length;
   fireEvent.change(input, { target: { value: 'مرحبا' } });
   expect(speechSynthesisMock.cancel.mock.calls.length).toBeGreaterThan(cancellationCount);
+});
+
+test('disables speakers with no compatible device voice without requesting a translation', () => {
+  speechSynthesisMock.getVoices.mockReturnValue([{ lang: 'en-US', name: 'English voice' }]);
+  render(<App />);
+  const input = screen.getByLabelText('Text to translate');
+  fireEvent.click(screen.getByRole('button', { name: /source language: detect language/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^Arabic/ }));
+  fireEvent.change(input, { target: { value: 'مرحبا' } });
+
+  const sourceSpeaker = within(screen.getByRole('region', { name: 'Source text' }))
+    .getByRole('button', { name: /speech is not available for this language/i });
+  expect(sourceSpeaker).toBeDisabled();
+  const targetSpeaker = within(screen.getByRole('region', { name: 'Translated text' }))
+    .getByRole('button', { name: /speech is not available for this language/i });
+  expect(targetSpeaker).toBeDisabled();
+  fireEvent.click(sourceSpeaker);
+  expect(speechSynthesisMock.speak).not.toHaveBeenCalled();
+  expect(requestTranslation).not.toHaveBeenCalled();
 });
 
 test('debounces rapid typing into a single automatic translation request', async () => {
@@ -308,13 +338,13 @@ test('pasted text uses the same debounced automatic translation path', async () 
   expect(requestTranslation).toHaveBeenCalledWith(expect.objectContaining({ text: 'Pasted text' }));
 });
 
-test('manual translation bypasses a pending debounce and target changes refresh immediately', async () => {
+test('Ctrl + Enter bypasses a pending debounce and target changes refresh immediately', async () => {
   jest.useFakeTimers();
   requestTranslation.mockResolvedValue({ translatedText: 'Bonjour', detectedLanguage: 'en' });
   render(<App />);
   const input = screen.getByLabelText('Text to translate');
   fireEvent.change(input, { target: { value: 'Hello' } });
-  fireEvent.click(screen.getByRole('button', { name: /^translate$/i }));
+  fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true });
   expect(await screen.findByText('Bonjour')).toBeInTheDocument();
   expect(requestTranslation).toHaveBeenCalledTimes(1);
   act(() => jest.advanceTimersByTime(1000));
