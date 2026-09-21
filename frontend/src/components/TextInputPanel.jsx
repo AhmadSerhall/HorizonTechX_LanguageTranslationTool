@@ -10,7 +10,7 @@ function TextInputPanel({
   const microphoneIsProcessing = microphoneState === 'processing';
   const microphoneLabel = !isSpeechRecognitionSupported
     ? 'Speech input is not supported in this browser.'
-    : microphoneIsListening ? 'Stop voice input' : microphoneIsProcessing ? 'Finalizing voice input' : 'Start voice input';
+    : microphoneIsListening ? 'Stop voice input' : microphoneIsProcessing ? 'Processing voice input' : 'Start voice input';
   return (
     <section className="translation-panel" aria-label="Source text">
       <div className="panel-topline">

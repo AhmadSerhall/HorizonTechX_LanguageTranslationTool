@@ -11,6 +11,7 @@ function Translator({
   sourceDirection,
   targetDirection,
   isLoading,
+  isManualTranslation,
   isConvertingSource,
   serviceMessage,
   copied,
@@ -50,9 +51,11 @@ function Translator({
           />
           <TranslationOutput
             text={translatedText}
+            sourceText={sourceText}
             language={targetLanguage}
             languages={languages}
             direction={targetDirection}
+            isLoading={isLoading}
             message={serviceMessage}
             copied={copied}
             speechState={speechState}
@@ -69,8 +72,8 @@ function Translator({
             <FiRepeat />
           </button>
           <button className="translate-button" type="button" onClick={onTranslate} disabled={!sourceText.trim() || isLoading || isConvertingSource}>
-            {isLoading ? <FiLoader className="loading-icon" /> : <FiSend />}
-            {isLoading ? 'Translating...' : 'Translate'}
+            {isLoading && isManualTranslation ? <FiLoader className="loading-icon" /> : <FiSend />}
+            {isLoading && isManualTranslation ? 'Translating...' : 'Translate'}
           </button>
         </div>
       </div>
