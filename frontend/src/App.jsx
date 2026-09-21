@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Translator from './components/Translator';
 import { AUTO_TRANSLATE_DEBOUNCE_MS, LARGE_TEXT_AUTO_TRANSLATE_DEBOUNCE_MS } from './constants';
 import { fallbackLanguages, getLanguage, isRightToLeftLanguage } from './data/languages';
+import { getUiTranslation, validateUiTranslationCoverage } from './data/uiTranslations';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from './hooks/useSpeechSynthesis';
 import { requestLanguages, requestTranslation } from './services/translationService';
@@ -89,11 +90,17 @@ function App() {
   }, [cancelActiveTranslation, clearAutoTranslateTimer]);
 
   const {
+    activeSpeaker,
     cancel: cancelSpeech,
     isSupported: isSpeechSupported,
     speak,
     speechState,
   } = useSpeechSynthesis();
+  const sourceSpeechState = activeSpeaker === 'source' ? speechState : 'idle';
+  const translationSpeechState = activeSpeaker === 'translation' ? speechState : 'idle';
+  const sourceSpeechLanguage = sourceLanguage === 'auto'
+    ? detectedLanguage || navigator.language || 'en-US'
+    : sourceLanguage;
 
   const startTranslation = useCallback(async ({ text, source, target, force = false, manual = false }) => {
     if (!text.trim()) return false;
@@ -191,6 +198,10 @@ function App() {
 
     requestLanguages().then((catalog) => {
       if (!isActive) return;
+      const missingTranslations = validateUiTranslationCoverage(catalog);
+      if (process.env.NODE_ENV !== 'production' && missingTranslations.length) {
+        console.warn(`Missing local UI translations for: ${missingTranslations.join(', ')}`);
+      }
       setLanguages(catalog);
       try { window.sessionStorage.setItem(LANGUAGE_CACHE_KEY, JSON.stringify(catalog)); } catch { /* Optional cache. */ }
     }).catch(() => {
@@ -206,7 +217,12 @@ function App() {
     cancelSpeech();
   }, [cancelSpeech, targetLanguage, translatedText]);
 
+  useEffect(() => {
+    cancelSpeech();
+  }, [cancelSpeech, sourceLanguage, sourceText]);
+
   const handleSourceTextChange = useCallback((value) => {
+    cancelSpeech();
     cancelPendingRequests();
     setIsLoading(false);
     setIsManualTranslation(false);
@@ -216,7 +232,7 @@ function App() {
     latestSuccessfulKeyRef.current = '';
     resetOutput();
     scheduleAutoTranslation({ text: value, source: sourceLanguage, target: targetLanguage });
-  }, [cancelPendingRequests, resetOutput, scheduleAutoTranslation, sourceLanguage, targetLanguage, updateSourceText]);
+  }, [cancelPendingRequests, cancelSpeech, resetOutput, scheduleAutoTranslation, sourceLanguage, targetLanguage, updateSourceText]);
 
   const handleSourceLanguageChange = useCallback(async (nextLanguage) => {
     if (nextLanguage === sourceLanguage || isConvertingSource) return;
@@ -334,13 +350,23 @@ function App() {
 
   const handleSpeak = useCallback(() => {
     if (!translatedText || !isSpeechSupported) return;
-    if (speechState !== 'idle') {
+    if (translationSpeechState !== 'idle') {
       cancelSpeech();
       return;
     }
     recognition.stop();
-    speak(translatedText, targetLanguage);
-  }, [cancelSpeech, isSpeechSupported, recognition, speak, speechState, targetLanguage, translatedText]);
+    speak(translatedText, targetLanguage, 'translation');
+  }, [cancelSpeech, isSpeechSupported, recognition, speak, targetLanguage, translatedText, translationSpeechState]);
+
+  const handleSourceSpeak = useCallback(() => {
+    if (!sourceText.trim() || !isSpeechSupported) return;
+    if (sourceSpeechState !== 'idle') {
+      cancelSpeech();
+      return;
+    }
+    recognition.stop();
+    speak(sourceText, sourceSpeechLanguage, 'source');
+  }, [cancelSpeech, isSpeechSupported, recognition, sourceSpeechLanguage, sourceSpeechState, sourceText, speak]);
 
   const handleMicrophone = useCallback(() => {
     if (!recognition.isSupported) {
@@ -380,8 +406,10 @@ function App() {
           isConvertingSource={isConvertingSource}
           serviceMessage={serviceMessage}
           copied={copied}
-          speechState={speechState}
           isSpeechSupported={isSpeechSupported}
+          sourceSpeechState={sourceSpeechState}
+          sourcePlaceholder={getUiTranslation(sourceLanguage === 'auto' ? 'en' : sourceLanguage).inputPlaceholder}
+          translationSpeechState={translationSpeechState}
           microphoneState={isMicrophoneProcessing ? 'processing' : recognition.recognitionState}
           isSpeechRecognitionSupported={recognition.isSupported}
           detectedLanguageName={getLanguage(detectedLanguage, languages)?.name}
@@ -393,6 +421,7 @@ function App() {
           onTranslate={handleTranslate}
           onCopy={handleCopy}
           onSpeak={handleSpeak}
+          onSourceSpeak={handleSourceSpeak}
           onMicrophone={handleMicrophone}
           onInputKeyDown={handleInputKeyDown}
         />

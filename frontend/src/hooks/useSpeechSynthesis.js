@@ -1,9 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const getLanguagePrefix = (languageCode) => languageCode.split('-')[0].toLocaleLowerCase();
+const speechLocales = {
+  'zh-Hans': 'zh-CN',
+  'zh-Hant': 'zh-TW',
+  'sr-Cyrl': 'sr-RS',
+  'sr-Latn': 'sr-Latn-RS',
+};
+
+const normalizeLocale = (languageCode = '') => languageCode.replace(/_/g, '-').toLocaleLowerCase();
+const getLanguagePrefix = (languageCode) => normalizeLocale(languageCode).split('-')[0];
+
+const selectVoice = (voices, languageCode) => {
+  const requestedLocale = normalizeLocale(speechLocales[languageCode] || languageCode);
+  const languagePrefix = getLanguagePrefix(requestedLocale);
+  const availableVoices = Array.isArray(voices) ? voices : [];
+  return availableVoices.find((voice) => normalizeLocale(voice.lang) === requestedLocale)
+    || availableVoices.find((voice) => normalizeLocale(voice.lang).startsWith(`${languagePrefix}-`))
+    || availableVoices.find((voice) => getLanguagePrefix(voice.lang) === languagePrefix);
+};
 
 export function useSpeechSynthesis() {
   const [speechState, setSpeechState] = useState('idle');
+  const [activeSpeaker, setActiveSpeaker] = useState(null);
   const [voices, setVoices] = useState([]);
   const utteranceRef = useRef(null);
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -11,13 +29,13 @@ export function useSpeechSynthesis() {
   const cancel = useCallback(() => {
     if (isSupported) window.speechSynthesis.cancel();
     utteranceRef.current = null;
+    setActiveSpeaker(null);
     setSpeechState('idle');
   }, [isSupported]);
 
   useEffect(() => {
     if (!isSupported) return undefined;
-
-    const updateVoices = () => setVoices(window.speechSynthesis.getVoices());
+    const updateVoices = () => setVoices(window.speechSynthesis.getVoices() || []);
     updateVoices();
     window.speechSynthesis.addEventListener?.('voiceschanged', updateVoices);
     return () => {
@@ -26,19 +44,17 @@ export function useSpeechSynthesis() {
     };
   }, [isSupported]);
 
-  const speak = useCallback((text, languageCode) => {
-    if (!isSupported || !text) return false;
+  const speak = useCallback((text, languageCode, speaker = 'translation') => {
+    if (!isSupported || !text.trim()) return false;
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    const languagePrefix = getLanguagePrefix(languageCode);
-    const availableVoices = Array.isArray(voices) ? voices : [];
-    const exactVoice = availableVoices.find((voice) => voice.lang.toLocaleLowerCase() === languageCode.toLocaleLowerCase());
-    const languageVoice = availableVoices.find((voice) => voice.lang.toLocaleLowerCase().startsWith(languagePrefix));
-    utterance.lang = exactVoice?.lang || languageVoice?.lang || languageCode;
-    if (exactVoice || languageVoice) utterance.voice = exactVoice || languageVoice;
+    const voice = selectVoice(voices, languageCode);
+    utterance.lang = voice?.lang || speechLocales[languageCode] || languageCode || navigator.language || 'en-US';
+    if (voice) utterance.voice = voice;
 
     utteranceRef.current = utterance;
+    setActiveSpeaker(speaker);
     setSpeechState('loading');
     utterance.onstart = () => {
       if (utteranceRef.current === utterance) setSpeechState('speaking');
@@ -46,6 +62,7 @@ export function useSpeechSynthesis() {
     utterance.onend = utterance.onerror = () => {
       if (utteranceRef.current === utterance) {
         utteranceRef.current = null;
+        setActiveSpeaker(null);
         setSpeechState('idle');
       }
     };
@@ -53,5 +70,5 @@ export function useSpeechSynthesis() {
     return true;
   }, [isSupported, voices]);
 
-  return { cancel, isSupported, speak, speechState };
+  return { activeSpeaker, cancel, isSupported, speak, speechState };
 }

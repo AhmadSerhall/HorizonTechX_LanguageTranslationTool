@@ -15,13 +15,16 @@ function Translator({
   isConvertingSource,
   serviceMessage,
   copied,
-  speechState,
   isSpeechSupported,
+  sourceSpeechState,
+  sourcePlaceholder,
+  translationSpeechState,
   microphoneState,
   isSpeechRecognitionSupported,
   detectedLanguageName,
   onSourceTextChange,
   onSourceLanguageChange,
+  onSourceSpeak,
   onTargetLanguageChange,
   onClear,
   onSwap,
@@ -40,14 +43,18 @@ function Translator({
             language={sourceLanguage}
             languages={languages}
             direction={sourceDirection}
+            placeholder={sourcePlaceholder}
             isConverting={isConvertingSource}
             microphoneState={microphoneState}
             isSpeechRecognitionSupported={isSpeechRecognitionSupported}
+            sourceSpeechState={sourceSpeechState}
+            isSpeechSupported={isSpeechSupported}
             onTextChange={onSourceTextChange}
             onLanguageChange={onSourceLanguageChange}
             onClear={onClear}
             onKeyDown={onInputKeyDown}
             onMicrophone={onMicrophone}
+            onSpeak={onSourceSpeak}
           />
           <TranslationOutput
             text={translatedText}
@@ -58,7 +65,7 @@ function Translator({
             isLoading={isLoading}
             message={serviceMessage}
             copied={copied}
-            speechState={speechState}
+            speechState={translationSpeechState}
             isSpeechSupported={isSpeechSupported}
             isConvertingSource={isConvertingSource}
             detectedLanguageName={detectedLanguageName}
