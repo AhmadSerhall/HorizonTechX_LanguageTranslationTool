@@ -47,7 +47,7 @@ afterEach(() => {
 
 test('renders the translator interface and retains its local catalog if language metadata fails', () => {
   render(<App />);
-  expect(screen.getByRole('heading', { name: /linguatranslate/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /GlobeLingo/i })).toBeInTheDocument();
   expect(screen.getByPlaceholderText(/enter text to translate/i)).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /^translate$/i })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Swap languages' })).toBeInTheDocument();

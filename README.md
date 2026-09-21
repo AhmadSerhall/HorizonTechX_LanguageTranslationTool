@@ -1,4 +1,4 @@
-# LinguaTranslate
+# GlobeLingo
 
 A full-stack language translation tool built for the HorizonTechX internship.
 

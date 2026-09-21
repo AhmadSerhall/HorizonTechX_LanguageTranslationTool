@@ -13,7 +13,7 @@ function TextInputPanel({
     : microphoneIsListening ? 'Stop voice input' : microphoneIsProcessing ? 'Processing voice input' : 'Start voice input';
   const sourceSpeechLabel = !isSpeechSupported
     ? 'Text-to-speech is not supported in this browser.'
-    : speechAvailability === 'unavailable' ? 'Speech is not available for this language on your device.'
+    : speechAvailability === 'unavailable' ? 'Speech is not available for this language.'
       : speechAvailability === 'pending' ? 'Speech voices are still loading.'
     : sourceSpeechState === 'loading' ? 'Preparing source speech'
       : sourceSpeechState === 'speaking' ? 'Stop source speech' : 'Listen to source text';

@@ -5,7 +5,7 @@ function Header() {
     <header className="site-header">
       <div className="brand-mark" aria-hidden="true"><FiGlobe /></div>
       <div>
-        <h1>LinguaTranslate</h1>
+        <h1>GlobeLingo</h1>
         <p>Translate text instantly between languages</p>
       </div>
     </header>

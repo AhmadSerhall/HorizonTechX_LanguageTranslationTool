@@ -353,7 +353,7 @@ function App() {
     if (!speak(translatedText, targetLanguage, 'translation')) {
       setServiceMessage(translationSpeechAvailability === 'pending'
         ? 'Speech voices are still loading. Please try again shortly.'
-        : 'Speech is not available for this language on your device.');
+        : 'Speech is not available for this language.');
     }
   }, [cancelSpeech, isSpeechSupported, recognition, speak, targetLanguage, translatedText, translationSpeechAvailability, translationSpeechState]);
 
@@ -367,7 +367,7 @@ function App() {
     if (!speak(sourceText, sourceSpeechLanguage, 'source')) {
       setServiceMessage(sourceSpeechAvailability === 'pending'
         ? 'Speech voices are still loading. Please try again shortly.'
-        : 'Speech is not available for this language on your device.');
+        : 'Speech is not available for this language.');
     }
   }, [cancelSpeech, isSpeechSupported, recognition, sourceSpeechAvailability, sourceSpeechLanguage, sourceSpeechState, sourceText, speak]);
 

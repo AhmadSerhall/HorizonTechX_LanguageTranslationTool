@@ -10,7 +10,7 @@ function TranslationOutput({
   const hasTranslation = Boolean(text);
   const speechLabel = !isSpeechSupported
     ? 'Text-to-speech is not supported in this browser.'
-    : speechAvailability === 'unavailable' ? 'Speech is not available for this language on your device.'
+    : speechAvailability === 'unavailable' ? 'Speech is not available for this language.'
       : speechAvailability === 'pending' ? 'Speech voices are still loading.'
     : speechState === 'loading' ? 'Preparing speech'
       : speechState === 'speaking' ? 'Stop speaking' : 'Listen to translation';
