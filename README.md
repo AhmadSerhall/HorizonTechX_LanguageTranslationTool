@@ -17,7 +17,6 @@ This project was developed as part of my **HorizonTechX internship**, with a foc
 - Automatic source-language detection
 - Automatic translation while typing
 - Debounced translation requests to reduce unnecessary API usage
-- Manual instant translation using `Ctrl + Enter`
 - Swap source and target languages
 - Automatic retranslation when languages change
 - Maximum input length of **5,000 characters**
@@ -417,31 +416,65 @@ A language can therefore be supported for **translation** while not having an av
 
 ---
 
-## 📸 Screenshots
+## 📸 GlobeLingo in Action
 
-### Translation
+### 🌐 Automatic Translation
 
-<!-- Add your final GlobeLingo screenshot here -->
+GlobeLingo automatically translates text after the user stops typing, without requiring a manual translate button. Translation requests are debounced to provide a responsive experience while avoiding unnecessary API calls.
 
-```text
-screenshots/translation.png
-```
+![GlobeLingo Automatic Translation](frontend/src/assets/gifs/demonstration.gif)
 
-### Language Selection
+---
 
-<!-- Add a screenshot of the searchable language selector -->
+### 🔍 Automatic Language Detection
 
-```text
-screenshots/language-selector.png
-```
+When **Detect language** is selected, GlobeLingo automatically identifies the source language and displays the detected language alongside the translated result.
 
-### RTL Translation
+![GlobeLingo Language Detection](frontend/src/assets/images/detectedlanguage.png)
 
-<!-- Add an Arabic or other RTL translation example -->
+---
 
-```text
-screenshots/rtl-translation.png
-```
+### 🌍 138 Supported Languages
+
+GlobeLingo provides a searchable language selector containing **138 languages supported by Microsoft Azure Translator**, including native language names and multiple script variants.
+
+![GlobeLingo Supported Languages](frontend/src/assets/images/supportedlanguages.png)
+
+---
+
+### 💬 Localized Interface
+
+The input and output placeholders automatically adapt to the selected languages.
+
+These interface messages are stored locally for all supported languages, so changing them requires **zero Azure translation requests**.
+
+![GlobeLingo Localized Placeholders](frontend/src/assets/gifs/placeholdertext.gif)
+
+---
+
+### 🎤 Voice Input & Speech Recognition
+
+Users can enter text using their microphone through the browser's **Web Speech Recognition API**.
+
+GlobeLingo displays the listening state, captures the recognized text, and automatically translates the final speech result.
+
+![GlobeLingo Voice Input](frontend/src/assets/gifs/record.gif)
+
+---
+
+### 🔄 Swap, Copy & Clear
+
+GlobeLingo includes convenient translation controls for quickly swapping languages, copying translated text, and clearing the current input.
+
+![GlobeLingo Translation Controls](frontend/src/assets/gifs/switchcopydelete.gif)
+
+---
+
+### 📝 Translation Example
+
+The interface supports longer text, automatic language detection, character counting, scrolling, and real-time translation between supported languages.
+
+![GlobeLingo Translation Example](frontend/src/assets/images/normaltranslation.png)
 
 ---
 
